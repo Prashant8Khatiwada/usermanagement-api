@@ -16,17 +16,19 @@ export class UsersService {
     return this.users;
   }
 
-  findone(id: number): IUser | undefined {
+  findOne(id: number): IUser | undefined {
     return this.users.find((user) => user.id === id);
   }
 
-  create(user: IUser): IUser {
+  create(userData: Omit<IUser, 'id'>): IUser {
+    const id = Math.max(...this.users.map(u => u.id), 0) + 1;
+    const user = { id, ...userData };
     this.users.push(user);
-    return user
+    return user;
   }
 
   update(id: number, updatedData: Partial<IUser>): IUser | undefined {
-    const user = this.findone(id);
+    const user = this.findOne(id);
     if (!user) return undefined
     Object.assign(user, updatedData);
     return user;
