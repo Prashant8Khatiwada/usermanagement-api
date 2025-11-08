@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 
 
 export interface IUser {
-  id: number;
+  id: string;
   username: string;
   password: string;
 }
@@ -25,7 +25,7 @@ export class UsersService {
   }
 
   // Return a promise that resolves to a single user or null
-  findOne(id: number): Promise<User | null> {
+  findOne(id: string): Promise<User | null> {
     return this.userRepo.findOneBy({ id })
   }
 
@@ -43,7 +43,7 @@ export class UsersService {
   }
 
   // Update a user, return the updated user or undefined if not found
-  async update(id: number, updatedData: Partial<User>): Promise<User | undefined> {
+  async update(id: string, updatedData: Partial<User>): Promise<User | undefined> {
     const user = await this.userRepo.findOneBy({ id })
     if (!user) return undefined;
     Object.assign(user, updatedData);
@@ -51,7 +51,7 @@ export class UsersService {
   }
 
   // Remove a user, return true if deleted, false otherwise
-  async remove(id: number): Promise<boolean> {
+  async remove(id: string): Promise<boolean> {
     const result: DeleteResult = await this.userRepo.delete(id)
     return (result.affected ?? 0) > 0;
   }

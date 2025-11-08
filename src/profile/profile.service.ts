@@ -5,7 +5,7 @@ import { UsersService } from '../users/users.service';
 export class ProfileService {
     constructor(private readonly usersService: UsersService) { }
 
-    async getProfile(userId: number) {
+    async getProfile(userId: string) {
         return this.usersService.findOne(userId);
     }
 }

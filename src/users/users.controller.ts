@@ -19,15 +19,15 @@ export class UsersController {
 
     @Get(':id')
     @ApiOperation({ summary: 'Get user by ID' })
-    @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+    @ApiParam({ name: 'id', type: String, description: 'User ID' })
     @ApiResponse({ status: 200, description: 'User found', type: UserDto })
     @ApiResponse({ status: 404, description: 'User not found' })
     async getByUserId(@Param('id') id: string): Promise<UserDto> {
-        const parsedId = Number(id);
-        if (isNaN(parsedId) || parsedId <= 0) {
-            throw new BadRequestException('Invalid user ID');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+            throw new BadRequestException('Invalid user ID format');
         }
-        const user = await this.usersService.findOne(parsedId);
+        const user = await this.usersService.findOne(id);
         if (!user) throw new NotFoundException(`User with id ${id} not found`);
         return user;
     }
@@ -42,7 +42,7 @@ export class UsersController {
 
     @Patch(":id")
     @ApiOperation({ summary: 'Update user by ID' })
-    @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+    @ApiParam({ name: 'id', type: String, description: 'User ID' })
     @ApiBody({ type: UpdateUserDto })
     @ApiResponse({ status: 200, description: 'User updated', type: UserDto })
     @ApiResponse({ status: 404, description: 'User not found' })
@@ -50,28 +50,33 @@ export class UsersController {
         @Param('id') id: string,
         @Body() updatedData: UpdateUserDto,
     ): Promise<UserDto> {
-        const parsedId = Number(id);
-        if (isNaN(parsedId) || parsedId <= 0) {
-            throw new BadRequestException('Invalid user ID');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+            throw new BadRequestException('Invalid user ID format');
         }
-        const user = await this.usersService.update(parsedId, updatedData);
+        const user = await this.usersService.update(id, updatedData);
         if (!user) throw new NotFoundException(`User with id ${id} not found`);
         return user;
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Delete user by ID' })
-    @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+    @ApiParam({ name: 'id', type: String, description: 'User ID' })
     @ApiResponse({ status: 200, description: 'User deleted' })
     @ApiResponse({ status: 404, description: 'User not found' })
     async deleteUser(@Param('id') id: string): Promise<{ message: string }> {
-        const parsedId = Number(id);
-        if (isNaN(parsedId) || parsedId <= 0) {
-            throw new BadRequestException('Invalid user ID');
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(id)) {
+            throw new BadRequestException('Invalid user ID format');
         }
-        const success = await this.usersService.remove(parsedId);
-        if (!success) throw new NotFoundException(`User with id ${id} not found`);
-        return { message: `User ${id} deleted successfully` };
+        // Await the user
+        const user = await this.usersService.findOne(id);
+        if (!user) { throw new NotFoundException(`User with ID ${id} not found`); }
+
+        const success = await this.usersService.remove(id);
+        if (!success) { throw new NotFoundException(`User with ID ${id} could not be deleted`); }
+
+        return { message: `User ${user.username} deleted successfully` };
     }
 }
 
