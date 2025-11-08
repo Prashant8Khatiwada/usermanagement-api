@@ -13,7 +13,7 @@ export class UsersController {
     @Get()
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'List of all users', type: [UserDto] })
-    getAllUsers(): UserDto[] {
+    async getAllUsers(): Promise<UserDto[]> {
         return this.usersService.findAll()
     }
 
@@ -22,8 +22,8 @@ export class UsersController {
     @ApiParam({ name: 'id', type: Number, description: 'User ID' })
     @ApiResponse({ status: 200, description: 'User found', type: UserDto })
     @ApiResponse({ status: 404, description: 'User not found' })
-    getByUserId(@Param('id') id: string): UserDto {
-        const user = this.usersService.findOne(Number(id))
+    async getByUserId(@Param('id') id: string): Promise<UserDto> {
+        const user = await this.usersService.findOne(Number(id))
         if (!user) throw new NotFoundException(`User with id ${id} not found`)
         return user;
     }
@@ -32,7 +32,7 @@ export class UsersController {
     @ApiOperation({ summary: 'Create a new user' })
     @ApiBody({ type: CreateUserDto })
     @ApiResponse({ status: 201, description: 'User created', type: UserDto })
-    createUser(@Body() user: CreateUserDto): UserDto {
+    async createUser(@Body() user: CreateUserDto): Promise<UserDto> {
         return this.usersService.create(user)
     }
 
@@ -42,10 +42,13 @@ export class UsersController {
     @ApiBody({ type: UpdateUserDto })
     @ApiResponse({ status: 200, description: 'User updated', type: UserDto })
     @ApiResponse({ status: 404, description: 'User not found' })
-    updateUser(@Param('id') id: string, @Body() updatedData: UpdateUserDto): UserDto {
-        const user = this.usersService.update(Number(id), updatedData)
-        if (!user) throw new NotFoundException(`User with id ${id} not found`)
-        return user
+    async updateUser(
+        @Param('id') id: string,
+        @Body() updatedData: UpdateUserDto,
+    ): Promise<UserDto> {
+        const user = await this.usersService.update(Number(id), updatedData);
+        if (!user) throw new NotFoundException(`User with id ${id} not found`);
+        return user;
     }
 
     @Delete(':id')
@@ -53,8 +56,8 @@ export class UsersController {
     @ApiParam({ name: 'id', type: Number, description: 'User ID' })
     @ApiResponse({ status: 200, description: 'User deleted' })
     @ApiResponse({ status: 404, description: 'User not found' })
-    deleteUser(@Param('id') id: string): { message: string } {
-        const success = this.usersService.remove(Number(id));
+    async deleteUser(@Param('id') id: string): Promise<{ message: string }> {
+        const success = await this.usersService.remove(Number(id));
         if (!success) throw new NotFoundException(`User with id ${id} not found`);
         return { message: `User ${id} deleted successfully` };
     }

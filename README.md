@@ -1,98 +1,267 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🧩 User Management API (NestJS + PostgreSQL + Scalar)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A backend API built with **NestJS**, featuring:
+- User CRUD operations
+- PostgreSQL database integration
+- Scalar API documentation
+- Scalable modular architecture
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Tech Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Backend:** [NestJS](https://nestjs.com)
+- **Database:** PostgreSQL
+- **ORM:** TypeORM (recommended)
+- **Documentation:** [Scalar](https://scalar.com)
+- **Package Manager:** Yarn
 
-## Project setup
+---
+
+## ⚙️ Project Setup
+
+### 1. Install dependencies
 
 ```bash
-$ yarn install
-```
+yarn install
 
-## Compile and run the project
 
+markdown
+# PostgreSQL Complete Beginner Guide
+
+## Step 1: Connect to PostgreSQL
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+sudo -u postgres psql
 ```
 
-## Run tests
+You're now in the PostgreSQL shell. The prompt will look like: `postgres=#`
 
-```bash
-# unit tests
-$ yarn run test
+---
 
-# e2e tests
-$ yarn run test:e2e
+## Step 2: Basic Commands You NEED to Know
 
-# test coverage
-$ yarn run test:cov
+### View Databases
+```sql
+\l
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+### Create Your First Database
+```sql
+CREATE DATABASE testdb;
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Connect to Database
+```sql
+\c testdb
+```
+
+### View All Tables
+```sql
+\dt
+```
+
+### Create a Table
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    age INT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Insert Data
+```sql
+INSERT INTO users (name, email, age) VALUES ('Alice', 'alice@email.com', 25);
+INSERT INTO users (name, email, age) VALUES ('Bob', 'bob@email.com', 30);
+INSERT INTO users (name, email, age) VALUES ('Charlie', 'charlie@email.com', 22);
+```
+
+### Query Data
+```sql
+-- Select all
+SELECT * FROM users;
+
+-- Select specific columns with filter
+SELECT name, email FROM users WHERE age > 23;
+
+-- Order results
+SELECT * FROM users ORDER BY age DESC;
+```
+
+### Update Data
+```sql
+UPDATE users SET age = 26 WHERE name = 'Alice';
+```
+
+### Delete Data
+```sql
+DELETE FROM users WHERE name = 'Bob';
+```
+
+### See Table Structure
+```sql
+\d users
+```
+
+### Exit PostgreSQL
+```sql
+\q
+```
+
+---
+
+## Step 3: Core Concepts to Master
+
+- **CREATE** - Make tables
+- **INSERT** - Add data
+- **SELECT** - Read data
+- **UPDATE** - Modify data
+- **DELETE** - Remove data
+- **WHERE** - Filter results
+- **JOIN** - Combine tables
+
+---
+
+## Step 4: Relationships (Important!)
+
+### Create a Related Table
+```sql
+CREATE TABLE posts (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    title VARCHAR(200),
+    content TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Insert Posts
+```sql
+INSERT INTO posts (user_id, title, content) VALUES (1, 'My First Post', 'Hello world!');
+INSERT INTO posts (user_id, title, content) VALUES (1, 'Second Post', 'Learning PostgreSQL');
+```
+
+### JOIN Tables
+```sql
+SELECT users.name, posts.title, posts.content 
+FROM users 
+JOIN posts ON users.id = posts.user_id;
+```
+
+---
+
+## Learning Path
+
+### Week 1: CRUD Operations
+- CREATE, INSERT, SELECT, UPDATE, DELETE
+- Basic WHERE clauses
+
+### Week 2: Filtering & Sorting
+- Complex WHERE conditions
+- ORDER BY, LIMIT, OFFSET
+- LIKE, IN, BETWEEN operators
+
+### Week 3: JOINs
+- INNER JOIN
+- LEFT JOIN
+- RIGHT JOIN
+- Understanding foreign keys
+
+### Week 4: Aggregations
+- COUNT, SUM, AVG, MIN, MAX
+- GROUP BY
+- HAVING clause
+
+### Week 5: Advanced Topics
+- Indexes for performance
+- Constraints (UNIQUE, CHECK, NOT NULL)
+- Transactions (BEGIN, COMMIT, ROLLBACK)
+
+---
+
+## Useful psql Commands
+
+| Command | Description |
+|---------|-------------|
+| `\l` | List all databases |
+| `\c dbname` | Connect to database |
+| `\dt` | List all tables |
+| `\d tablename` | Describe table structure |
+| `\du` | List all users |
+| `\q` | Quit psql |
+| `\?` | Help with psql commands |
+| `\h SQL_COMMAND` | Help with SQL commands |
+
+---
+
+## Practice Exercises
+
+### Exercise 1: Create a Blog
+```sql
+-- Create tables for a simple blog
+CREATE TABLE authors (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    bio TEXT
+);
+
+CREATE TABLE articles (
+    id SERIAL PRIMARY KEY,
+    author_id INT REFERENCES authors(id),
+    title VARCHAR(200),
+    body TEXT,
+    published_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Insert data and practice JOINs
+```
+
+### Exercise 2: E-commerce Database
+```sql
+-- Create products and orders tables
+CREATE TABLE products (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    price DECIMAL(10, 2),
+    stock INT
+);
+
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    product_id INT REFERENCES products(id),
+    quantity INT,
+    order_date TIMESTAMP DEFAULT NOW()
+);
+
+-- Practice aggregations with GROUP BY
+```
+
+---
+
+## Tips
+
+1. **Practice daily** - Even 15 minutes helps
+2. **Break things** - Don't be afraid to mess up
+3. **Read error messages** - They tell you what's wrong
+4. **Use \d often** - To understand table structures
+5. **Start simple** - Master basics before advanced topics
+
+---
 
 ## Resources
 
-Check out a few resources that may come in handy when working with NestJS:
+- Official PostgreSQL Docs: https://www.postgresql.org/docs/
+- PostgreSQL Tutorial: https://www.postgresqltutorial.com/
+- SQL Practice: https://sqlzoo.net/
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+**Now stop reading and start typing! The only way to learn is by doing.**
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Run database migrations
+yarn typeorm migration:run
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Run tests
+yarn test
