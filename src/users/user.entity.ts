@@ -1,5 +1,10 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
+export enum UserRole {
+    USER = 'user',
+    ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')
@@ -10,6 +15,9 @@ export class User {
 
     @Column({ nullable: true })
     password: string; // will be stored hashed password
+
+    @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+    role: "admin" | "user";
 
     @Column({ name: 'first_name', nullable: true })
     firstName: string;

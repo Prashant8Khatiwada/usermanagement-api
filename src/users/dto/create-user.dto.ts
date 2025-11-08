@@ -16,6 +16,9 @@ export class CreateUserDto {
     @ApiProperty({ example: 'john.doe@example.com', description: 'The email of the user' })
     email: string;
 
+    @ApiProperty({ example: 'user', description: "The role of user" })
+    role: "user" | 'admin'
+
     @ApiProperty({ example: '+1234567890', description: 'The phone number of the user' })
     phone: string;
 

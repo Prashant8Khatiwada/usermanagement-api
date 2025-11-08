@@ -5,6 +5,9 @@ import { UserDto } from './dto/user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from './roles.decorator';
+import { UserRole } from './user.entity';
+import { RolesGuard } from './roles.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -58,6 +61,8 @@ export class UsersController {
     @ApiOperation({ summary: 'Create a new user' })
     @ApiBody({ type: CreateUserDto })
     @ApiResponse({ status: 201, description: 'User created', type: UserDto })
+    @Roles(UserRole.ADMIN) // only admins can create
+    @UseGuards(JwtAuthGuard, RolesGuard)
     async createUser(@Body() user: CreateUserDto): Promise<UserDto> {
         return this.usersService.create(user)
     }
@@ -86,6 +91,8 @@ export class UsersController {
     @ApiParam({ name: 'id', type: String, description: 'User ID' })
     @ApiResponse({ status: 200, description: 'User deleted' })
     @ApiResponse({ status: 404, description: 'User not found' })
+    @Roles(UserRole.ADMIN) // only admins can Delete
+    @UseGuards(JwtAuthGuard, RolesGuard)
     async deleteUser(@Param('id') id: string): Promise<{ message: string }> {
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         if (!uuidRegex.test(id)) {
