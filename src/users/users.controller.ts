@@ -24,6 +24,20 @@ export class UsersController {
         return usersWithoutPassword;
     }
 
+    @Get('me')
+    @ApiOperation({ summary: 'Get user profile' })
+    @ApiBearerAuth()
+    @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+    @UseGuards(JwtAuthGuard)
+    async getMe(@Request() req) {
+        const user = await this.usersService.findOne(req.user.userId);
+        if (!user) throw new NotFoundException('User not found');
+
+        // Destructure after null-check
+        const { password, ...userWithoutPassword } = user;
+
+        return { ...userWithoutPassword, message: 'Profile data retrieved successfully' };
+    }
 
     @Get(':id')
     @ApiOperation({ summary: 'Get user by ID' })
@@ -85,21 +99,6 @@ export class UsersController {
         if (!success) { throw new NotFoundException(`User with ID ${id} could not be deleted`); }
 
         return { message: `User ${user.username} deleted successfully` };
-    }
-
-    @Get('me')
-    @ApiOperation({ summary: 'Get user profile' })
-    @ApiBearerAuth()
-    @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
-    @UseGuards(JwtAuthGuard)
-    async getMe(@Request() req) {
-        const user = await this.usersService.findOne(req.user.userId);
-        if (!user) throw new NotFoundException('User not found');
-
-        // Destructure after null-check
-        const { password, ...userWithoutPassword } = user;
-
-        return { ...userWithoutPassword, message: 'Profile data retrieved successfully' };
     }
 }
 
