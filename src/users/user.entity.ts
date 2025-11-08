@@ -5,6 +5,9 @@ export class User {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
-    name: string;
+    @Column({ name: 'name' })
+    username: string;
+
+    @Column({ nullable: true })
+    password: string; // will be stored hashed password
 }

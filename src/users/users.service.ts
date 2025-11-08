@@ -2,11 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './user.entity';
-import { DeleteResult } from 'typeorm/browser';
+import { DeleteResult } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+
 
 export interface IUser {
   id: number;
-  name: string;
+  username: string;
+  password: string;
 }
 
 @Injectable()
@@ -26,10 +29,17 @@ export class UsersService {
     return this.userRepo.findOneBy({ id })
   }
 
+  async findByUserName(username: string): Promise<User | null> {
+    const user = await this.userRepo.findOneBy({ username: username });
+    return user || null;
+  }
+
+
   // Create a user and return a promise resolving to the created user
-  create(userData: Omit<IUser, 'id'>): Promise<IUser> {
-    const user = this.userRepo.create(userData)
-    return this.userRepo.save(user)
+  async create(userData: Omit<IUser, 'id'>): Promise<IUser> {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const user = this.userRepo.create({ ...userData, password: hashedPassword });
+    return this.userRepo.save(user);
   }
 
   // Update a user, return the updated user or undefined if not found

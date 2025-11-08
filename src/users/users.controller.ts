@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UserDto } from './dto/user.dto';
@@ -23,8 +23,12 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'User found', type: UserDto })
     @ApiResponse({ status: 404, description: 'User not found' })
     async getByUserId(@Param('id') id: string): Promise<UserDto> {
-        const user = await this.usersService.findOne(Number(id))
-        if (!user) throw new NotFoundException(`User with id ${id} not found`)
+        const parsedId = Number(id);
+        if (isNaN(parsedId) || parsedId <= 0) {
+            throw new BadRequestException('Invalid user ID');
+        }
+        const user = await this.usersService.findOne(parsedId);
+        if (!user) throw new NotFoundException(`User with id ${id} not found`);
         return user;
     }
 
@@ -46,7 +50,11 @@ export class UsersController {
         @Param('id') id: string,
         @Body() updatedData: UpdateUserDto,
     ): Promise<UserDto> {
-        const user = await this.usersService.update(Number(id), updatedData);
+        const parsedId = Number(id);
+        if (isNaN(parsedId) || parsedId <= 0) {
+            throw new BadRequestException('Invalid user ID');
+        }
+        const user = await this.usersService.update(parsedId, updatedData);
         if (!user) throw new NotFoundException(`User with id ${id} not found`);
         return user;
     }
@@ -57,7 +65,11 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'User deleted' })
     @ApiResponse({ status: 404, description: 'User not found' })
     async deleteUser(@Param('id') id: string): Promise<{ message: string }> {
-        const success = await this.usersService.remove(Number(id));
+        const parsedId = Number(id);
+        if (isNaN(parsedId) || parsedId <= 0) {
+            throw new BadRequestException('Invalid user ID');
+        }
+        const success = await this.usersService.remove(parsedId);
         if (!success) throw new NotFoundException(`User with id ${id} not found`);
         return { message: `User ${id} deleted successfully` };
     }
