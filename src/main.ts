@@ -10,11 +10,27 @@ async function bootstrap() {
     .setTitle('User Management API')
     .setDescription('API for managing users')
     .setVersion('1.0')
+    .addBearerAuth()
+    .addSecurity('bearerAuth', {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    })
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  app.use('/scalar', apiReference({ url: '/api-json' }));
+  app.use(
+    '/scalar',
+    apiReference({
+      url: '/api-json',
+      theme: 'default',
+      authentication: {
+        preferredSecurityScheme: 'bearerAuth',
+      },
+    }),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, BadRequestException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, BadRequestException, UseGuards, Request } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UserDto } from './dto/user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -14,8 +15,15 @@ export class UsersController {
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'List of all users', type: [UserDto] })
     async getAllUsers(): Promise<UserDto[]> {
-        return this.usersService.findAll()
+        const users = await this.usersService.findAll();
+        if (!users || users.length === 0) {
+            throw new NotFoundException('No users available');
+        }
+        const usersWithoutPassword = users.map(({ password, ...rest }) => rest);
+
+        return usersWithoutPassword;
     }
+
 
     @Get(':id')
     @ApiOperation({ summary: 'Get user by ID' })
@@ -77,6 +85,21 @@ export class UsersController {
         if (!success) { throw new NotFoundException(`User with ID ${id} could not be deleted`); }
 
         return { message: `User ${user.username} deleted successfully` };
+    }
+
+    @Get('me')
+    @ApiOperation({ summary: 'Get user profile' })
+    @ApiBearerAuth()
+    @ApiResponse({ status: 200, description: 'Profile retrieved successfully' })
+    @UseGuards(JwtAuthGuard)
+    async getMe(@Request() req) {
+        const user = await this.usersService.findOne(req.user.userId);
+        if (!user) throw new NotFoundException('User not found');
+
+        // Destructure after null-check
+        const { password, ...userWithoutPassword } = user;
+
+        return { ...userWithoutPassword, message: 'Profile data retrieved successfully' };
     }
 }
 
