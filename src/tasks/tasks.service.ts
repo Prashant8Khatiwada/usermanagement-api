@@ -18,17 +18,12 @@ export class TasksService {
     }
 
     async findAll(userId: string, page = 1, limit = 10, status?: string): Promise<PaginatedTasksResponseDto> {
-        console.log('findAll called with userId:', userId, 'page:', page, 'limit:', limit, 'status:', status);
         const query = this.repo.createQueryBuilder('task')
             .leftJoin('task.user', 'user')
             .where('user.id = :userId', { userId });
 
         if (status) query.andWhere('task.status = :status', { status });
-
-        console.log('Query SQL:', query.getSql());
         const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
-        console.log("Retrieved data count:", data.length, "total:", total);
-        console.log("this is required data", data)
 
         return paginate(data.map(task => ({
             id: task.id,
@@ -72,11 +67,14 @@ export class TasksService {
     }
 
     async removeAll(userId: string): Promise<JustMessageDto> {
-        const tasks = await this.repo.find({ where: { user: { id: userId } } });
-        if (!tasks.length) return { message: 'No tasks to delete' };
-        await this.repo.remove(tasks);
-
-        return { message: 'All tasks deleted' };
+        try {
+            const tasks = await this.repo.find({ where: { user: { id: userId } } });
+            if (!tasks.length) return { message: 'No tasks to delete' };
+            await this.repo.remove(tasks);
+            return { message: 'All tasks deleted' };
+        } catch (error) {
+            throw error;
+        }
     }
 }
 

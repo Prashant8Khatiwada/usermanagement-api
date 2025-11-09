@@ -51,11 +51,11 @@ export class TasksController {
         return this.tasksService.update(id, userId, dto);
     }
 
-    @Delete(':id')
-    @ApiOperation({ summary: 'Delete a task by ID' })
-    @ApiResponse({ status: 200, description: 'Task deleted successfully', schema: { example: { message: 'Task Title Task Deleted' } } })
-    remove(@Param('id') id: string, @GetUser('id') userId: string) {
-        return this.tasksService.remove(id, userId);
+    @Delete('all')
+    @ApiOperation({ summary: 'Delete all tasks for the user' })
+    @ApiResponse({ status: 200, description: 'All tasks deleted successfully', schema: { example: { message: 'All tasks deleted' } } })
+    removeAll(@GetUser('id') userId: string) {
+        return this.tasksService.removeAll(userId);
     }
 
     @Delete()
@@ -66,10 +66,10 @@ export class TasksController {
         return this.tasksService.removeMany(ids, userId);
     }
 
-    @Delete('all')
-    @ApiOperation({ summary: 'Delete all tasks for the user' })
-    @ApiResponse({ status: 200, description: 'All tasks deleted successfully', schema: { example: { message: 'All tasks deleted' } } })
-    removeAll(@GetUser('id') userId: string) {
-        return this.tasksService.removeAll(userId);
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete a task by ID' })
+    @ApiResponse({ status: 200, description: 'Task deleted successfully', schema: { example: { message: 'Task Title Task Deleted' } } })
+    remove(@Param('id') id: string, @GetUser('id') userId: string) {
+        return this.tasksService.remove(id, userId);
     }
 }
