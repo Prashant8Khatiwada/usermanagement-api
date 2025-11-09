@@ -24,14 +24,14 @@ export class TasksController {
     @Get()
     @ApiOperation({ summary: 'Get all tasks with optional pagination and filtering' })
     @ApiResponse({ status: 200, description: 'List of tasks', type: [Task] })
-    @ApiQuery({ name: 'page', required: false, type: Number })
-    @ApiQuery({ name: 'limit', required: false, type: Number })
-    @ApiQuery({ name: 'status', required: false, type: String })
+    @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number, default 1' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page, default 10' })
+    @ApiQuery({ name: 'status', required: false, type: String, example: 'pending', description: 'Filter tasks by status' })
     findAll(
         @GetUser('id') userId: string,
         @Query('page') page: number,
         @Query('limit') limit: number,
-        @Query('status') status: string,
+        @Query('status') status: 'pending' | 'in-progress' | 'completed',
     ) {
         return this.tasksService.findAll(userId, +page || 1, +limit || 10, status);
     }
@@ -53,22 +53,22 @@ export class TasksController {
 
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a task by ID' })
-    @ApiResponse({ status: 200, description: 'Task deleted successfully' })
+    @ApiResponse({ status: 200, description: 'Task deleted successfully', schema: { example: { message: 'Task Title Task Deleted' } } })
     remove(@Param('id') id: string, @GetUser('id') userId: string) {
         return this.tasksService.remove(id, userId);
     }
 
     @Delete()
     @ApiOperation({ summary: 'Delete multiple tasks by IDs' })
-    @ApiResponse({ status: 200, description: 'Tasks deleted successfully' })
-    @ApiBody({ schema: { properties: { ids: { type: 'array', items: { type: 'string' } } } } })
+    @ApiResponse({ status: 200, description: 'Tasks deleted successfully', schema: { example: { message: '3 tasks deleted' } } })
+    @ApiBody({ schema: { properties: { ids: { type: 'array', items: { type: 'string' }, example: ['id1', 'id2'] } } } })
     removeMany(@Body('ids') ids: string[], @GetUser('id') userId: string) {
         return this.tasksService.removeMany(ids, userId);
     }
 
     @Delete('all')
     @ApiOperation({ summary: 'Delete all tasks for the user' })
-    @ApiResponse({ status: 200, description: 'All tasks deleted successfully' })
+    @ApiResponse({ status: 200, description: 'All tasks deleted successfully', schema: { example: { message: 'All tasks deleted' } } })
     removeAll(@GetUser('id') userId: string) {
         return this.tasksService.removeAll(userId);
     }

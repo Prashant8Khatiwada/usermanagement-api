@@ -1,6 +1,7 @@
 import { User } from "src/users/user.entity";
-import { Column, CreateDateColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
+@Entity('tasks')
 export class Task {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -8,7 +9,7 @@ export class Task {
     @Column()
     title: string;
 
-    @Column()
+    @Column({ nullable: true })
     description?: string;
 
     @Column({

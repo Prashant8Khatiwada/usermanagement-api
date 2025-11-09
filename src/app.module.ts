@@ -20,7 +20,7 @@ import { TasksModule } from './tasks/tasks.module';
       username: process.env.DATABASE_USERNAME || '',
       password: process.env.DATABASE_PASSWORD || '',
       database: process.env.DATABASE_NAME || '',
-      autoLoadEntities: true,
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: process.env.NODE_ENV !== 'production', // enable only in dev
     }),
     UsersModule,

@@ -5,7 +5,7 @@ export function paginate<T>(
     limit: number
 ) {
     return {
-        data,
+        data: data,
         pagination: {
             total,
             page,

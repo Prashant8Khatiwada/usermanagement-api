@@ -18,13 +18,26 @@ export class TasksService {
     }
 
     async findAll(userId: string, page = 1, limit = 10, status?: string): Promise<PaginatedTasksResponseDto> {
-        const query = this.repo.createQueryBuilder('task').where('task.userId = :userId', { userId })
+        console.log('findAll called with userId:', userId, 'page:', page, 'limit:', limit, 'status:', status);
+        const query = this.repo.createQueryBuilder('task')
+            .leftJoin('task.user', 'user')
+            .where('user.id = :userId', { userId });
 
-        if (status) query.andWhere('task.status= :status', { status })
+        if (status) query.andWhere('task.status = :status', { status });
 
-        const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount()
+        console.log('Query SQL:', query.getSql());
+        const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
+        console.log("Retrieved data count:", data.length, "total:", total);
+        console.log("this is required data", data)
 
-        return paginate(data, total, page, limit);
+        return paginate(data.map(task => ({
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+        })), total, page, limit);
     }
 
     async findOne(id: string, userId: string): Promise<TaskResponseDto> {
