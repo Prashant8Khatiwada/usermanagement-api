@@ -37,6 +37,10 @@ export class TasksService {
                 name: populatedTask.category.name,
                 description: populatedTask.category.description,
             } : undefined,
+            user: {
+                id: populatedTask.user.id,
+                username: populatedTask.user.username,
+            },
         };
     }
 
@@ -46,7 +50,20 @@ export class TasksService {
         const query = this.repo.createQueryBuilder('task')
             .leftJoin('task.user', 'user')
             .leftJoin('task.category', 'category')
-            .where('user.id = :userId', { userId });
+            .where('user.id = :userId', { userId })
+            .select([
+                'task.id',
+                'task.title',
+                'task.description',
+                'task.status',
+                'task.createdAt',
+                'task.updatedAt',
+                'user.id',
+                'user.username',
+                'category.id',
+                'category.name',
+                'category.description'
+            ]);
 
         if (status) query.andWhere('task.status = :status', { status });
         if (categoryId) query.andWhere('category.id = :categoryId', { categoryId });
@@ -62,13 +79,41 @@ export class TasksService {
             status: task.status,
             createdAt: task.createdAt,
             updatedAt: task.updatedAt,
+            category: task.category ? {
+                id: task.category.id,
+                name: task.category.name,
+                description: task.category.description,
+            } : undefined,
+            user: {
+                id: task.user.id,
+                username: task.user.username,
+            },
         })), total, page, limit);
     }
 
     async findOne(id: string, userId: string): Promise<TaskResponseDto> {
-        const task = await this.repo.findOne({ where: { id, user: { id: userId } } })
-        if (!task) throw new NotFoundException('Task Not Found')
-        return task;
+        const task = await this.repo.findOne({
+            where: { id, user: { id: userId } },
+            relations: ['user', 'category']
+        });
+        if (!task) throw new NotFoundException('Task Not Found');
+        return {
+            id: task.id,
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt,
+            category: task.category ? {
+                id: task.category.id,
+                name: task.category.name,
+                description: task.category.description,
+            } : undefined,
+            user: {
+                id: task.user.id,
+                username: task.user.username,
+            },
+        };
     }
 
     async update(id: string, userId: string, dto: UpdateTaskDto): Promise<TaskResponseDto> {

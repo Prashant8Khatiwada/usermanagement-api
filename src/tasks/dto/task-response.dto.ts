@@ -12,6 +12,10 @@ export class TaskResponseDto {
         name: string;
         description?: string;
     };
+    user: {
+        id: string;
+        username: string;
+    };
 }
 
 export class PaginatedTasksResponseDto {
