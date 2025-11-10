@@ -6,6 +6,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { Task } from './task.entity';
+import { TaskSchema } from './task.schema';
 
 @ApiTags('tasks')
 @Controller('tasks')
@@ -16,7 +17,7 @@ export class TasksController {
     @Post()
     @ApiOperation({ summary: 'Create a new task' })
     @ApiResponse({ status: 201, description: 'Task created successfully', type: Task })
-    @ApiBody({ type: CreateTaskDto })
+    @ApiBody({ type: CreateTaskDto, schema: TaskSchema })
     create(@Body() dto: CreateTaskDto, @GetUser('id') userId: string) {
         return this.tasksService.create(dto, userId);
     }
@@ -48,7 +49,7 @@ export class TasksController {
     @Patch(':id')
     @ApiOperation({ summary: 'Update a task by ID' })
     @ApiResponse({ status: 200, description: 'Task updated successfully', type: Task })
-    @ApiBody({ type: UpdateTaskDto })
+    @ApiBody({ type: CreateTaskDto, schema: TaskSchema })
     update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @GetUser('id') userId: string) {
         return this.tasksService.update(id, userId, dto);
     }
@@ -63,8 +64,8 @@ export class TasksController {
     @Delete()
     @ApiOperation({ summary: 'Delete multiple tasks by IDs' })
     @ApiResponse({ status: 200, description: 'Tasks deleted successfully', schema: { example: { message: '3 tasks deleted' } } })
-    @ApiBody({ schema: { properties: { ids: { type: 'array', items: { type: 'string' }, example: ['id1', 'id2'] } } } })
-    removeMany(@Body('ids') ids: string[], @GetUser('id') userId: string) {
+    @ApiBody({ schema: { type: 'array', items: { type: 'string' }, example: ['id1', 'id2'] } })
+    removeMany(@Body() ids: string[], @GetUser('id') userId: string) {
         return this.tasksService.removeMany(ids, userId);
     }
 
@@ -75,3 +76,4 @@ export class TasksController {
         return this.tasksService.remove(id, userId);
     }
 }
+

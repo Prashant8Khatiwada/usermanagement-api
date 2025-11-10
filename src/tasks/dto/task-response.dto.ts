@@ -7,6 +7,11 @@ export class TaskResponseDto {
     status: 'pending' | 'in-progress' | 'completed';
     createdAt: Date;
     updatedAt: Date;
+    category?: {
+        id: string;
+        name: string;
+        description?: string;
+    };
 }
 
 export class PaginatedTasksResponseDto {

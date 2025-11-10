@@ -12,9 +12,30 @@ export class TasksService {
     constructor(@InjectRepository(Task) private repo: Repository<Task>) { }
 
     async create(dto: CreateTaskDto, userId: string): Promise<TaskResponseDto> {
-        const task = this.repo.create({ ...dto, user: { id: userId } });
+        const task = this.repo.create({
+            ...dto,
+            user: { id: userId },
+            category: dto.categoryId ? { id: dto.categoryId } : undefined
+        });
         const savedTask = await this.repo.save(task);
-        return savedTask;
+        const populatedTask = await this.repo.findOne({
+            where: { id: savedTask.id },
+            relations: ['user', 'category']
+        });
+        if (!populatedTask) throw new NotFoundException('Task not found after creation');
+        return {
+            id: populatedTask.id,
+            title: populatedTask.title,
+            description: populatedTask.description,
+            status: populatedTask.status,
+            createdAt: populatedTask.createdAt,
+            updatedAt: populatedTask.updatedAt,
+            category: populatedTask.category ? {
+                id: populatedTask.category.id,
+                name: populatedTask.category.name,
+                description: populatedTask.category.description,
+            } : undefined,
+        };
     }
 
     async findAll(userId: string, page = 1, limit = 10, status?: string, categoryId?: string): Promise<PaginatedTasksResponseDto> {
