@@ -1,3 +1,4 @@
+import { Category } from "src/categories/categories.entity";
 import { User } from "src/users/user.entity";
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
@@ -21,6 +22,9 @@ export class Task {
 
     @ManyToOne(() => User, (user) => user.tasks, { onDelete: 'CASCADE' })
     user: User;
+
+    @ManyToOne(() => Category, (category) => category.tasks, { onDelete: "SET NULL", nullable: true })
+    category: Category
 
     @CreateDateColumn()
     createdAt: Date;

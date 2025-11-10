@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     UsersModule,
     AuthModule,
     TasksModule,
+    CategoriesModule,
   ], controllers: [AppController],
   providers: [AppService],
 })
