@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, Logger } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -12,6 +12,8 @@ import { TaskSchema } from './task.schema';
 @Controller('tasks')
 @UseGuards(JwtAuthGuard)
 export class TasksController {
+    private readonly logger = new Logger(TasksController.name);
+
     constructor(private readonly tasksService: TasksService) { }
 
     @Post()
@@ -36,6 +38,7 @@ export class TasksController {
         @Query('status') status: 'pending' | 'in-progress' | 'completed',
         @Query('categoryId') categoryId: string,
     ) {
+        this.logger.log(`TasksController.findAll called with userId: ${userId}, page: ${page}, limit: ${limit}, status: ${status}, categoryId: ${categoryId}`);
         return this.tasksService.findAll(userId, +page || 1, +limit || 10, status, categoryId);
     }
 

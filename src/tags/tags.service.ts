@@ -4,15 +4,32 @@ import { Repository } from 'typeorm';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { Tag } from './tags.entity';
+import { Task } from '../tasks/task.entity';
 
 @Injectable()
 export class TagsService {
-    constructor(@InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,) { }
+    constructor(
+        @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
+        @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
+    ) { }
 
     async create(dto: CreateTagDto, userId: string): Promise<Tag> {
+        console.log('TagsService create - userId:', userId);
+        const task = await this.taskRepo.findOne({
+            where: { id: dto.taskId },
+            relations: ['user'],
+        });
+        if (!task) {
+            throw new NotFoundException('Task not found');
+        }
+        console.log('TagsService create - task.user.id:', task.user.id);
+        if (task.user.id !== userId) {
+            throw new ForbiddenException('You cannot create a tag for this task');
+        }
         const tag = this.tagRepo.create({
-            ...dto,
+            name: dto.name,
             createdBy: { id: userId },
+            tasks: [{ id: dto.taskId }],
         });
         return this.tagRepo.save(tag);
     }

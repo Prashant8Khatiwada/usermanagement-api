@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { Repository, In } from 'typeorm';
@@ -9,6 +9,8 @@ import { TaskResponseDto, PaginatedTasksResponseDto, JustMessageDto } from './dt
 
 @Injectable()
 export class TasksService {
+    private readonly logger = new Logger(TasksService.name);
+
     constructor(@InjectRepository(Task) private repo: Repository<Task>) { }
 
     async create(dto: CreateTaskDto, userId: string): Promise<TaskResponseDto> {
@@ -39,6 +41,8 @@ export class TasksService {
     }
 
     async findAll(userId: string, page = 1, limit = 10, status?: string, categoryId?: string): Promise<PaginatedTasksResponseDto> {
+        this.logger.log(`findAll called with userId: ${userId}, page: ${page}, limit: ${limit}, status: ${status}, categoryId: ${categoryId}`);
+
         const query = this.repo.createQueryBuilder('task')
             .leftJoin('task.user', 'user')
             .leftJoin('task.category', 'category')
@@ -46,7 +50,10 @@ export class TasksService {
 
         if (status) query.andWhere('task.status = :status', { status });
         if (categoryId) query.andWhere('category.id = :categoryId', { categoryId });
+
+        this.logger.log(`Executing query: ${query.getQuery()}`);
         const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
+        this.logger.log(`Query returned ${data.length} tasks out of ${total} total`);
 
         return paginate(data.map(task => ({
             id: task.id,

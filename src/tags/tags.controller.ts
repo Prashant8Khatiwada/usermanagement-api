@@ -17,7 +17,7 @@ export class TagsController {
     @ApiOperation({ summary: 'Create a new tag' })
     @ApiBody({ schema: TagSchema })
     @ApiResponse({ status: 201, description: 'Tag created successfully', schema: TagSchema })
-    create(@Body() dto: CreateTagDto, @GetUserId('id') userId: string) {
+    create(@Body() dto: CreateTagDto, @GetUserId() userId: string) {
         return this.tagsService.create(dto, userId);
     }
 
