@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { Repository, In } from 'typeorm';
 import { CreateTaskDto } from './dto/create-task.dto';
-import { paginate } from 'src/utils/paginate';
+import { paginate } from 'src/common/utils/paginate';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskResponseDto, PaginatedTasksResponseDto, JustMessageDto } from './dto/task-response.dto';
 
