@@ -1,6 +1,7 @@
 import { Task } from 'src/tasks/task.entity';
 import { Category } from 'src/categories/categories.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Tag } from 'src/tags/tags.entity';
 
 export enum UserRole {
     USER = 'user',
@@ -41,4 +42,8 @@ export class User {
 
     @OneToMany(() => Category, (category) => category.user)
     categories: Category[];
+
+    @OneToMany(() => Tag, tag => tag.createdBy)
+    tags: Tag[];
+
 }

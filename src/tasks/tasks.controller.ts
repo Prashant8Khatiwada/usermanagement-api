@@ -3,7 +3,7 @@ import { TasksService } from './tasks.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { GetUser } from 'src/auth/get-user.decorator';
+import { GetUserId } from 'src/auth/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { Task } from './task.entity';
 import { TaskSchema } from './task.schema';
@@ -18,7 +18,7 @@ export class TasksController {
     @ApiOperation({ summary: 'Create a new task' })
     @ApiResponse({ status: 201, description: 'Task created successfully', type: Task })
     @ApiBody({ type: CreateTaskDto, schema: TaskSchema })
-    create(@Body() dto: CreateTaskDto, @GetUser('id') userId: string) {
+    create(@Body() dto: CreateTaskDto, @GetUserId('id') userId: string) {
         return this.tasksService.create(dto, userId);
     }
 
@@ -30,7 +30,7 @@ export class TasksController {
     @ApiQuery({ name: 'status', required: false, type: String, example: 'pending', description: 'Filter tasks by status' })
     @ApiQuery({ name: 'categoryId', required: false, type: String, example: 'uuid', description: 'Filter tasks by category ID' })
     findAll(
-        @GetUser('id') userId: string,
+        @GetUserId('id') userId: string,
         @Query('page') page: number,
         @Query('limit') limit: number,
         @Query('status') status: 'pending' | 'in-progress' | 'completed',
@@ -42,7 +42,7 @@ export class TasksController {
     @Get(':id')
     @ApiOperation({ summary: 'Get a single task by ID' })
     @ApiResponse({ status: 200, description: 'Task details', type: Task })
-    findOne(@Param('id') id: string, @GetUser('id') userId: string) {
+    findOne(@Param('id') id: string, @GetUserId('id') userId: string) {
         return this.tasksService.findOne(id, userId);
     }
 
@@ -50,14 +50,14 @@ export class TasksController {
     @ApiOperation({ summary: 'Update a task by ID' })
     @ApiResponse({ status: 200, description: 'Task updated successfully', type: Task })
     @ApiBody({ type: CreateTaskDto, schema: TaskSchema })
-    update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @GetUser('id') userId: string) {
+    update(@Param('id') id: string, @Body() dto: UpdateTaskDto, @GetUserId('id') userId: string) {
         return this.tasksService.update(id, userId, dto);
     }
 
     @Delete('all')
     @ApiOperation({ summary: 'Delete all tasks for the user' })
     @ApiResponse({ status: 200, description: 'All tasks deleted successfully', schema: { example: { message: 'All tasks deleted' } } })
-    removeAll(@GetUser('id') userId: string) {
+    removeAll(@GetUserId('id') userId: string) {
         return this.tasksService.removeAll(userId);
     }
 
@@ -65,14 +65,14 @@ export class TasksController {
     @ApiOperation({ summary: 'Delete multiple tasks by IDs' })
     @ApiResponse({ status: 200, description: 'Tasks deleted successfully', schema: { example: { message: '3 tasks deleted' } } })
     @ApiBody({ schema: { type: 'array', items: { type: 'string' }, example: ['id1', 'id2'] } })
-    removeMany(@Body() ids: string[], @GetUser('id') userId: string) {
+    removeMany(@Body() ids: string[], @GetUserId('id') userId: string) {
         return this.tasksService.removeMany(ids, userId);
     }
 
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a task by ID' })
     @ApiResponse({ status: 200, description: 'Task deleted successfully', schema: { example: { message: 'Task Title Task Deleted' } } })
-    remove(@Param('id') id: string, @GetUser('id') userId: string) {
+    remove(@Param('id') id: string, @GetUserId('id') userId: string) {
         return this.tasksService.remove(id, userId);
     }
 }
