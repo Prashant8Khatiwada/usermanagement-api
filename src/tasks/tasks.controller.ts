@@ -27,13 +27,15 @@ export class TasksController {
     @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number, default 1' })
     @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page, default 10' })
     @ApiQuery({ name: 'status', required: false, type: String, example: 'pending', description: 'Filter tasks by status' })
+    @ApiQuery({ name: 'categoryId', required: false, type: String, example: 'uuid', description: 'Filter tasks by category ID' })
     findAll(
         @GetUser('id') userId: string,
         @Query('page') page: number,
         @Query('limit') limit: number,
         @Query('status') status: 'pending' | 'in-progress' | 'completed',
+        @Query('categoryId') categoryId: string,
     ) {
-        return this.tasksService.findAll(userId, +page || 1, +limit || 10, status);
+        return this.tasksService.findAll(userId, +page || 1, +limit || 10, status, categoryId);
     }
 
     @Get(':id')

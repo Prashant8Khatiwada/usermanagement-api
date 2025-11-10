@@ -33,7 +33,7 @@ export class CategoriesService {
         return category
     }
 
-    async update(id: string, userId: string, dto: UpdateCategoryDto): Promise<UpdateCategoryDto> {
+    async update(id: string, userId: string, dto: UpdateCategoryDto): Promise<Category> {
         const category = await this.findOne(id, userId);
         Object.assign(category, dto)
         const savedCategory = await this.repo.save(category)

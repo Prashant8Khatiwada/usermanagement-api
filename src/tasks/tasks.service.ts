@@ -17,12 +17,14 @@ export class TasksService {
         return savedTask;
     }
 
-    async findAll(userId: string, page = 1, limit = 10, status?: string): Promise<PaginatedTasksResponseDto> {
+    async findAll(userId: string, page = 1, limit = 10, status?: string, categoryId?: string): Promise<PaginatedTasksResponseDto> {
         const query = this.repo.createQueryBuilder('task')
             .leftJoin('task.user', 'user')
+            .leftJoin('task.category', 'category')
             .where('user.id = :userId', { userId });
 
         if (status) query.andWhere('task.status = :status', { status });
+        if (categoryId) query.andWhere('category.id = :categoryId', { categoryId });
         const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
 
         return paginate(data.map(task => ({
