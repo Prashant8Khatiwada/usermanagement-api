@@ -5,9 +5,9 @@ import { UserDto } from './dto/user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Roles } from './roles.decorator';
-import { UserRole } from './user.entity';
-import { RolesGuard } from './roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../users/user.entity';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('users')
 @Controller('users')

@@ -3,10 +3,10 @@ import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { GetUserId } from 'src/auth/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { Category } from './categories.entity';
 import { CategorySchema } from './categories.schema';
+import { GetUserId } from 'src/common/decorators/get-user.decorator';
 
 @ApiTags('categories')
 @Controller('categories')

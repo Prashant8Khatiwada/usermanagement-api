@@ -4,8 +4,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
-import { GetUserId } from '../auth/get-user.decorator';
 import { TagSchema } from './tag.schema';
+import { GetUserId } from 'src/common/decorators/get-user.decorator';
 
 @ApiTags('tags')
 @Controller('tags')

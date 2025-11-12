@@ -3,10 +3,10 @@ import { TasksService } from './tasks.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { GetUserId } from 'src/auth/get-user.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { Task } from './task.entity';
 import { TaskSchema } from './task.schema';
+import { GetUserId } from 'src/common/decorators/get-user.decorator';
 
 @ApiTags('tasks')
 @Controller('tasks')

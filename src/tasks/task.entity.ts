@@ -1,6 +1,6 @@
 import { Category } from "src/categories/categories.entity";
 import { Tag } from "src/tags/tags.entity";
-import { User } from "src/users/user.entity";
+import { User } from "../users/user.entity";
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
 @Entity('tasks')
