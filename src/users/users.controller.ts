@@ -13,6 +13,7 @@ import { UserSchema } from './users.schema';
 
 @ApiTags('users')
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UsersController {
     private readonly logger = new Logger(UsersController.name);
 

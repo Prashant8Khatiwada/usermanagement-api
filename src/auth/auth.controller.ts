@@ -2,6 +2,7 @@ import { Controller, Post, Body, HttpException, HttpStatus } from '@nestjs/commo
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UserSchema } from '../users/users.schema';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -30,7 +31,7 @@ export class AuthController {
     }
 
     @ApiOperation({ summary: 'User registration' })
-    @ApiBody({ type: CreateUserDto })
+    @ApiBody({ type: CreateUserDto, schema: UserSchema })
     @ApiResponse({ status: 201, description: 'User registered successfully' })
     @ApiResponse({ status: 400, description: 'Bad request' })
     @Post('register')

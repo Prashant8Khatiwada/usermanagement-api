@@ -31,6 +31,7 @@ export enum ProjectPriority {
 
 @Entity()
 @Index(['team', 'status'])
+@Index(['team', 'name'], { unique: true })
 export class Project {
     @PrimaryGeneratedColumn('uuid')
     id: string;

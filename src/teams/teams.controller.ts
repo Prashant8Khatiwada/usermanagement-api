@@ -8,11 +8,14 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { Team } from './teams.entity';
+import { User } from 'src/users/user.entity';
 import { GetUserId } from 'src/common/decorators/get-user.decorator';
 import { TeamSchema } from './teams.schema';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @ApiTags('Teams')
 @Controller('teams')
+@UseGuards(JwtAuthGuard)
 export class TeamsController {
     private readonly logger = new Logger(TeamsController.name);
 
@@ -25,7 +28,7 @@ export class TeamsController {
     @ApiOperation({ summary: 'Create a new team' })
     @ApiResponse({ status: 201, description: 'Team created', type: Team })
     @ApiBody({ type: CreateTeamDto, schema: TeamSchema })
-    async createTeam(@Body() dto: CreateTeamDto, @GetUserId() userId: string) {
+    async createTeam(@Body() dto: CreateTeamDto, @GetUserId() userId: User) {
         return this.teamsService.createTeam(dto, userId);
     }
 
@@ -38,7 +41,7 @@ export class TeamsController {
     @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
     @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
     async findAll(
-        @GetUserId() userId: string,
+        @GetUserId('id') userId: string,
         @Query('page') page = 1,
         @Query('limit') limit = 10,
     ) {
@@ -51,7 +54,7 @@ export class TeamsController {
     @Get(':teamId')
     @ApiOperation({ summary: 'Get team details by ID' })
     @ApiResponse({ status: 200, description: 'Team details', type: Team })
-    async getTeam(@Param('teamId') teamId: string, @GetUserId() userId: string) {
+    async getTeam(@Param('teamId') teamId: string, @GetUserId('id') userId: string) {
         const team = await this.teamsService.getTeamById(teamId);
 
         // Membership check
@@ -69,7 +72,7 @@ export class TeamsController {
     @TeamRoles(TeamRole.OWNER, TeamRole.MANAGER)
     @ApiOperation({ summary: 'Update team information' })
     @ApiResponse({ status: 200, description: 'Team updated', type: Team })
-    @ApiBody({ type: UpdateTeamDto })
+    @ApiBody({ type: UpdateTeamDto, schema: TeamSchema })
     async updateTeam(@Param('teamId') teamId: string, @Body() dto: UpdateTeamDto) {
         return this.teamsService.updateTeam(teamId, dto);
     }

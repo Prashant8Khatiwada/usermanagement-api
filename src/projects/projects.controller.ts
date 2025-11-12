@@ -7,6 +7,7 @@ import { TeamRolesGuard } from 'src/common/guards/team-role.guard';
 import { TeamRoles } from 'src/common/decorators/team-roles.decorator';
 import { CreateProjectDto } from './dto/create-projects.dto';
 import { UpdateProjectDto } from './dto/update-projects.dto';
+import { ProjectSchema } from './projects.schema';
 
 @Controller('teams/:teamId/projects')
 @UseGuards(TeamRolesGuard)
@@ -19,7 +20,7 @@ export class ProjectsController {
     @TeamRoles(TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR)
     @ApiOperation({ summary: 'Create a new project in a team' })
     @ApiResponse({ status: 201, description: 'Project created', type: Project })
-    @ApiBody({ type: CreateProjectDto })
+    @ApiBody({ type: CreateProjectDto, schema: ProjectSchema })
     async create(@Param('teamId') teamId: string, @Request() req, @Body() dto: CreateProjectDto) {
         return this.projectsService.createProject(teamId, req.user.id, dto);
     }
@@ -62,7 +63,7 @@ export class ProjectsController {
     @TeamRoles(TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR)
     @ApiOperation({ summary: 'Update a project' })
     @ApiResponse({ status: 200, description: 'Project updated', type: Project })
-    @ApiBody({ type: UpdateProjectDto })
+    @ApiBody({ type: UpdateProjectDto, schema: ProjectSchema })
     async update(@Param('projectId') projectId: string, @Request() req, @Body() dto: UpdateProjectDto) {
         return this.projectsService.updateProject(projectId, req.user.id, dto);
     }

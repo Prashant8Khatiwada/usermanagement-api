@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { Project } from './projects.entity';
 import { Team } from 'src/teams/teams.entity';
 import { User } from 'src/users/user.entity';
@@ -10,6 +10,8 @@ import { UpdateProjectDto } from './dto/update-projects.dto';
 
 @Injectable()
 export class ProjectsService {
+    private readonly logger = new Logger(ProjectsService.name);
+
     constructor(
         @InjectRepository(Project)
         private readonly projectRepo: Repository<Project>,
@@ -53,19 +55,50 @@ export class ProjectsService {
     // Create a project in a team
     // -------------------------------
     async createProject(teamId: string, userId: string, dto: CreateProjectDto) {
+        this.logger.log(`Creating project: teamId=${teamId}, userId=${userId}, name=${dto.name}`);
+
         const team = await this.teamRepo.findOne({ where: { id: teamId }, relations: ['members'] });
-        if (!team) throw new NotFoundException('Team not found');
+        if (!team) {
+            this.logger.error(`Team not found: ${teamId}`);
+            throw new NotFoundException('Team not found');
+        }
+        this.logger.log(`Team found: ${team.id}`);
 
         // Check user role in team
         const membership = team.members.find(m => m.user.id === userId);
         if (!membership || ![TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR].includes(membership.role)) {
+            this.logger.warn(`Insufficient permissions: userId=${userId}, teamId=${teamId}, role=${membership?.role}`);
             throw new ForbiddenException('Insufficient permissions to create project');
         }
+        this.logger.log(`User role validated: ${membership.role}`);
 
         const user = await this.userRepo.findOne({ where: { id: userId } });
-        if (!user) throw new NotFoundException('User not found');
+        if (!user) {
+            this.logger.error(`User not found: ${userId}`);
+            throw new NotFoundException('User not found');
+        }
+
+        // Check for existing project with same name in team
+        const existingProject = await this.projectRepo.findOne({ where: { name: dto.name, team: { id: teamId } } });
+        if (existingProject) {
+            this.logger.warn(`Project with name '${dto.name}' already exists in team ${teamId}`);
+            throw new BadRequestException(`Project with name '${dto.name}' already exists in this team`);
+        }
+
         const project = this.projectRepo.create({ ...dto, team: { id: teamId }, owner: { id: userId } });
-        return this.projectRepo.save(project);
+        this.logger.log(`Project entity created, attempting to save...`);
+
+        try {
+            const savedProject = await this.projectRepo.save(project);
+            this.logger.log(`Project created successfully: id=${savedProject.id}`);
+            return savedProject;
+        } catch (error) {
+            this.logger.error(`Error saving project: ${error.message}`, error.stack);
+            if (error instanceof QueryFailedError) {
+                throw new BadRequestException('Failed to create project due to data constraint violation');
+            }
+            throw error; // Re-throw other errors
+        }
     }
 
     // -------------------------------

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './teams.entity';
@@ -26,9 +26,13 @@ export class TeamsService {
     // -------------------------------
     // Create a new team and assign owner
     // -------------------------------
-    async createTeam(dto: CreateTeamDto, ownerId: string) {
-        const owner = await this.userRepo.findOne({ where: { id: ownerId } });
-        if (!owner) throw new NotFoundException('Owner user not found');
+    async createTeam(dto: CreateTeamDto, userId: User) {
+        const owner = await this.userRepo.findOne({ where: { id: userId.id } });
+        if (!owner) throw new NotFoundException('User not found');
+
+        // Check for duplicate team name
+        const existingTeam = await this.teamRepo.findOne({ where: { name: dto.name } });
+        if (existingTeam) throw new BadRequestException('Team with this name already exists');
 
         const team = this.teamRepo.create({ name: dto.name });
         await this.teamRepo.save(team);
@@ -60,8 +64,8 @@ export class TeamsService {
     async findAll(userId: string, page = 1, limit = 10) {
         this.logger.log(`findAll called with userId: ${userId}, page: ${page}, limit: ${limit}`);
 
-        const query = this.memberRepo.createQueryBuilder('member')
-            .leftJoin('member.team', 'team')
+        const query = this.teamRepo.createQueryBuilder('team')
+            .leftJoin('team.members', 'member')
             .leftJoin('member.user', 'user')
             .where('user.id = :userId', { userId })
             .select([
@@ -70,11 +74,8 @@ export class TeamsService {
             ]);
 
         this.logger.log(`Executing query: ${query.getQuery()}`);
-        const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
-        this.logger.log(`Query returned ${data.length} teams out of ${total} total`);
-
-        // Since data is memberships, map to teams
-        const teams = data.map(m => m.team);
+        const [teams, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
+        this.logger.log(`Query returned ${teams.length} teams out of ${total} total`);
 
         return paginate(teams, total, page, limit);
     }
