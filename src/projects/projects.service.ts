@@ -2,9 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException,
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
 import { Project } from './projects.entity';
-import { Team } from 'src/teams/teams.entity';
 import { User } from 'src/users/user.entity';
-import { TeamMember, TeamRole } from 'src/teams/team-member.entity';
+import { ProjectMember, ProjectRole } from './project-member.entity';
 import { CreateProjectDto } from './dto/create-projects.dto';
 import { UpdateProjectDto } from './dto/update-projects.dto';
 
@@ -16,11 +15,8 @@ export class ProjectsService {
         @InjectRepository(Project)
         private readonly projectRepo: Repository<Project>,
 
-        @InjectRepository(Team)
-        private readonly teamRepo: Repository<Team>,
-
-        @InjectRepository(TeamMember)
-        private readonly memberRepo: Repository<TeamMember>,
+        @InjectRepository(ProjectMember)
+        private readonly memberRepo: Repository<ProjectMember>,
 
         @InjectRepository(User)
         private readonly userRepo: Repository<User>,
@@ -52,25 +48,10 @@ export class ProjectsService {
     }
 
     // -------------------------------
-    // Create a project in a team
+    // Create a project
     // -------------------------------
-    async createProject(teamId: string, userId: string, dto: CreateProjectDto) {
-        this.logger.log(`Creating project: teamId=${teamId}, userId=${userId}, name=${dto.name}`);
-
-        const team = await this.teamRepo.findOne({ where: { id: teamId }, relations: ['members'] });
-        if (!team) {
-            this.logger.error(`Team not found: ${teamId}`);
-            throw new NotFoundException('Team not found');
-        }
-        this.logger.log(`Team found: ${team.id}`);
-
-        // Check user role in team
-        const membership = team.members.find(m => m.user.id === userId);
-        if (!membership || ![TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR].includes(membership.role)) {
-            this.logger.warn(`Insufficient permissions: userId=${userId}, teamId=${teamId}, role=${membership?.role}`);
-            throw new ForbiddenException('Insufficient permissions to create project');
-        }
-        this.logger.log(`User role validated: ${membership.role}`);
+    async createProject(userId: string, dto: CreateProjectDto) {
+        this.logger.log(`Creating project: userId=${userId}, name=${dto.name}`);
 
         const user = await this.userRepo.findOne({ where: { id: userId } });
         if (!user) {
@@ -78,19 +59,29 @@ export class ProjectsService {
             throw new NotFoundException('User not found');
         }
 
-        // Check for existing project with same name in team
-        const existingProject = await this.projectRepo.findOne({ where: { name: dto.name, team: { id: teamId } } });
+        // Check for existing project with same name for this user
+        const existingProject = await this.projectRepo.findOne({ where: { name: dto.name, owner: { id: userId } } });
         if (existingProject) {
-            this.logger.warn(`Project with name '${dto.name}' already exists in team ${teamId}`);
-            throw new BadRequestException(`Project with name '${dto.name}' already exists in this team`);
+            this.logger.warn(`Project with name '${dto.name}' already exists for user ${userId}`);
+            throw new BadRequestException(`Project with name '${dto.name}' already exists`);
         }
 
-        const project = this.projectRepo.create({ ...dto, team: { id: teamId }, owner: { id: userId } });
+        const project = this.projectRepo.create({ ...dto, owner: { id: userId } });
         this.logger.log(`Project entity created, attempting to save...`);
 
         try {
             const savedProject = await this.projectRepo.save(project);
             this.logger.log(`Project created successfully: id=${savedProject.id}`);
+
+            // Add creator as owner member
+            const projectMember = this.memberRepo.create({
+                user: { id: userId },
+                project: { id: savedProject.id },
+                role: ProjectRole.OWNER,
+            });
+            await this.memberRepo.save(projectMember);
+            this.logger.log(`Added creator as owner member`);
+
             return savedProject;
         } catch (error) {
             this.logger.error(`Error saving project: ${error.message}`, error.stack);
@@ -119,11 +110,11 @@ export class ProjectsService {
     async updateProject(projectId: string, userId: string, dto: UpdateProjectDto) {
         const project = await this.getProjectById(projectId);
 
-        // Check user role in team
+        // Check user role in project
         const membership = await this.memberRepo.findOne({
-            where: { team: { id: project.team.id }, user: { id: userId } },
+            where: { project: { id: projectId }, user: { id: userId } },
         });
-        if (!membership || ![TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR].includes(membership.role)) {
+        if (!membership || ![ProjectRole.OWNER, ProjectRole.MANAGER, ProjectRole.CONTRIBUTOR].includes(membership.role)) {
             throw new ForbiddenException('Insufficient permissions to update project');
         }
 
@@ -138,12 +129,46 @@ export class ProjectsService {
         const project = await this.getProjectById(projectId);
 
         const membership = await this.memberRepo.findOne({
-            where: { team: { id: project.team.id }, user: { id: userId } },
+            where: { project: { id: projectId }, user: { id: userId } },
         });
-        if (!membership || ![TeamRole.OWNER, TeamRole.MANAGER].includes(membership.role)) {
+        if (!membership || ![ProjectRole.OWNER, ProjectRole.MANAGER].includes(membership.role)) {
             throw new ForbiddenException('Insufficient permissions to delete project');
         }
 
         return this.projectRepo.remove(project);
+    }
+
+    // -------------------------------
+    // Add a member to the project
+    // -------------------------------
+    async addMember(projectId: string, userId: string, role: ProjectRole) {
+        const project = await this.getProjectById(projectId);
+        const user = await this.userRepo.findOne({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        // Check if already a member
+        const existing = await this.memberRepo.findOne({ where: { project: { id: projectId }, user: { id: userId } } });
+        if (existing) throw new ForbiddenException('User is already a member');
+
+        const member = this.memberRepo.create({ project, user, role });
+        return this.memberRepo.save(member);
+    }
+
+    // -------------------------------
+    // Remove a member from the project
+    // -------------------------------
+    async removeMember(projectId: string, userId: string) {
+        const member = await this.memberRepo.findOne({
+            where: { project: { id: projectId }, user: { id: userId } },
+        });
+        if (!member) throw new NotFoundException('Member not found');
+
+        // Optional: prevent removing OWNER if last one
+        if (member.role === ProjectRole.OWNER) {
+            const ownerCount = await this.memberRepo.count({ where: { project: { id: projectId }, role: ProjectRole.OWNER } });
+            if (ownerCount <= 1) throw new ForbiddenException('Cannot remove the last OWNER');
+        }
+
+        return this.memberRepo.remove(member);
     }
 }

@@ -1,10 +1,10 @@
 import { IsNotEmpty, IsString } from "class-validator";
-import { TeamRole } from "../team-member.entity";
+import { ProjectRole } from "../project-member.entity";
 
 export class AddMemberDto {
     @IsString()
     @IsNotEmpty()
-
     userId: string;
-    role: TeamRole;
+
+    role: ProjectRole;
 }

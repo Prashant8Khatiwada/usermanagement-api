@@ -10,8 +10,8 @@ import {
     DeleteDateColumn,
 } from 'typeorm';
 import { Task } from '../tasks/task.entity';
-import { User } from '../users/user.entity'; // ← you'll probably need this
-import { Team } from 'src/teams/teams.entity';
+import { ProjectMember } from './project-member.entity';
+import { User } from '../users/user.entity';
 
 export enum ProjectStatus {
     PLANNING = 'planning',
@@ -30,8 +30,6 @@ export enum ProjectPriority {
 }
 
 @Entity()
-@Index(['team', 'status'])
-@Index(['team', 'name'], { unique: true })
 export class Project {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -77,16 +75,13 @@ export class Project {
     // ------------------------------------------------------------------
     // Relationships
     // ------------------------------------------------------------------
-    @ManyToOne(() => Team, (team) => team.projects, {
-        onDelete: 'CASCADE',
-        eager: true
-    })
-    team: Team;
-
     @OneToMany(() => Task, (task) => task.project, {
         cascade: true,
     })
     tasks: Task[];
+
+    @OneToMany(() => ProjectMember, (member) => member.project, { cascade: true, eager: true })
+    members: ProjectMember[];
 
     @ManyToOne(() => User, { nullable: false })
     owner: User;

@@ -1,28 +1,30 @@
 import { Controller, Post, Get, Patch, Delete, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { TeamRole } from 'src/teams/team-member.entity';
+import { ProjectMember, ProjectRole } from './project-member.entity';
 import { ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { Project } from './projects.entity';
-import { TeamRolesGuard } from 'src/common/guards/team-role.guard';
-import { TeamRoles } from 'src/common/decorators/team-roles.decorator';
+import { ProjectRolesGuard } from 'src/common/guards/project-role.guard';
+import { ProjectRoles } from 'src/common/decorators/project-roles.decorator';
 import { CreateProjectDto } from './dto/create-projects.dto';
 import { UpdateProjectDto } from './dto/update-projects.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+import { AddMemberSchema } from './dto/add-member.schema';
 import { ProjectSchema } from './projects.schema';
 
-@Controller('teams/:teamId/projects')
-@UseGuards(TeamRolesGuard)
+@Controller('projects')
+@UseGuards(ProjectRolesGuard)
 export class ProjectsController {
     constructor(private readonly projectsService: ProjectsService) { }
     // -------------------------------
-    // POST /teams/:teamId/projects
+    // POST /projects
     // -------------------------------
     @Post()
-    @TeamRoles(TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR)
-    @ApiOperation({ summary: 'Create a new project in a team' })
+    @ProjectRoles(ProjectRole.OWNER, ProjectRole.MANAGER, ProjectRole.CONTRIBUTOR)
+    @ApiOperation({ summary: 'Create a new project' })
     @ApiResponse({ status: 201, description: 'Project created', type: Project })
     @ApiBody({ type: CreateProjectDto, schema: ProjectSchema })
-    async create(@Param('teamId') teamId: string, @Request() req, @Body() dto: CreateProjectDto) {
-        return this.projectsService.createProject(teamId, req.user.id, dto);
+    async create(@Request() req, @Body() dto: CreateProjectDto) {
+        return this.projectsService.createProject(req.user.id, dto);
     }
 
     // -------------------------------
@@ -57,10 +59,10 @@ export class ProjectsController {
     }
 
     // -------------------------------
-    // PATCH /teams/:teamId/projects/:projectId
+    // PATCH /projects/:projectId
     // -------------------------------
     @Patch(':projectId')
-    @TeamRoles(TeamRole.OWNER, TeamRole.MANAGER, TeamRole.CONTRIBUTOR)
+    @ProjectRoles(ProjectRole.OWNER, ProjectRole.MANAGER, ProjectRole.CONTRIBUTOR)
     @ApiOperation({ summary: 'Update a project' })
     @ApiResponse({ status: 200, description: 'Project updated', type: Project })
     @ApiBody({ type: UpdateProjectDto, schema: ProjectSchema })
@@ -69,13 +71,36 @@ export class ProjectsController {
     }
 
     // -------------------------------
-    // DELETE /teams/:teamId/projects/:projectId
+    // DELETE /projects/:projectId
     // -------------------------------
     @Delete(':projectId')
-    @TeamRoles(TeamRole.OWNER, TeamRole.MANAGER)
+    @ProjectRoles(ProjectRole.OWNER, ProjectRole.MANAGER)
     @ApiOperation({ summary: 'Delete a project' })
     @ApiResponse({ status: 200, description: 'Project deleted', type: Project })
     async remove(@Param('projectId') projectId: string, @Request() req) {
         return this.projectsService.deleteProject(projectId, req.user.id);
+    }
+
+    // -------------------------------
+    // POST /projects/:projectId/members
+    // -------------------------------
+    @Post(':projectId/members')
+    @ProjectRoles(ProjectRole.OWNER, ProjectRole.MANAGER)
+    @ApiOperation({ summary: 'Add a member to the project' })
+    @ApiResponse({ status: 201, description: 'Member added', type: ProjectMember })
+    @ApiBody({ type: AddMemberDto, schema: AddMemberSchema })
+    async addMember(@Param('projectId') projectId: string, @Body() dto: AddMemberDto) {
+        return this.projectsService.addMember(projectId, dto.userId, dto.role);
+    }
+
+    // -------------------------------
+    // DELETE /projects/:projectId/members/:userId
+    // -------------------------------
+    @Delete(':projectId/members/:userId')
+    @ProjectRoles(ProjectRole.OWNER)
+    @ApiOperation({ summary: 'Remove a member from the project' })
+    @ApiResponse({ status: 200, description: 'Member removed', type: ProjectMember })
+    async removeMember(@Param('projectId') projectId: string, @Param('userId') userId: string) {
+        return this.projectsService.removeMember(projectId, userId);
     }
 }
