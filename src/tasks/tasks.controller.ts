@@ -31,15 +31,17 @@ export class TasksController {
     @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page, default 10' })
     @ApiQuery({ name: 'status', required: false, type: String, example: 'pending', description: 'Filter tasks by status' })
     @ApiQuery({ name: 'categoryId', required: false, type: String, example: 'uuid', description: 'Filter tasks by category ID' })
+    @ApiQuery({ name: 'projectId', required: false, type: String, example: 'uuid', description: 'Filter tasks by project ID' })
     findAll(
         @GetUserId('id') userId: string,
         @Query('page') page: number,
         @Query('limit') limit: number,
         @Query('status') status: 'pending' | 'in-progress' | 'completed',
         @Query('categoryId') categoryId: string,
+        @Query('projectId') projectId: string,
     ) {
-        this.logger.log(`TasksController.findAll called with userId: ${userId}, page: ${page}, limit: ${limit}, status: ${status}, categoryId: ${categoryId}`);
-        return this.tasksService.findAll(userId, +page || 1, +limit || 10, status, categoryId);
+        this.logger.log(`TasksController.findAll called with userId: ${userId}, page: ${page}, limit: ${limit}, status: ${status}, categoryId: ${categoryId}, projectId: ${projectId}`);
+        return this.tasksService.findAll(userId, +page || 1, +limit || 10, status, categoryId, projectId);
     }
 
     @Get(':id')

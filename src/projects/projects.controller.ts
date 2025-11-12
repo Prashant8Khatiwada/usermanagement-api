@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Patch, Delete, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
+import { TasksService } from '../tasks/tasks.service';
 import { ProjectMember, ProjectRole } from './project-member.entity';
 import { ApiOperation, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { Project } from './projects.entity';
@@ -10,11 +11,16 @@ import { UpdateProjectDto } from './dto/update-projects.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { AddMemberSchema } from './dto/add-member.schema';
 import { ProjectSchema } from './projects.schema';
+import { CreateTaskDto } from '../tasks/dto/create-task.dto';
+import { PaginatedTasksResponseDto, TaskResponseDto } from '../tasks/dto/task-response.dto';
 
 @Controller('projects')
 @UseGuards(ProjectRolesGuard)
 export class ProjectsController {
-    constructor(private readonly projectsService: ProjectsService) { }
+    constructor(
+        private readonly projectsService: ProjectsService,
+        private readonly tasksService: TasksService,
+    ) { }
     // -------------------------------
     // POST /projects
     // -------------------------------
@@ -102,5 +108,43 @@ export class ProjectsController {
     @ApiResponse({ status: 200, description: 'Member removed', type: ProjectMember })
     async removeMember(@Param('projectId') projectId: string, @Param('userId') userId: string) {
         return this.projectsService.removeMember(projectId, userId);
+    }
+
+    // -------------------------------
+    // GET /projects/:projectId/tasks
+    // -------------------------------
+    @Get(':projectId/tasks')
+    @ProjectRoles(ProjectRole.CONTRIBUTOR)
+    @ApiOperation({ summary: 'Get tasks for a project' })
+    @ApiResponse({ status: 200, description: 'List of tasks', type: PaginatedTasksResponseDto })
+    @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number, default 1' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page, default 10' })
+    @ApiQuery({ name: 'status', required: false, type: String, example: 'pending', description: 'Filter tasks by status' })
+    @ApiQuery({ name: 'categoryId', required: false, type: String, example: 'uuid', description: 'Filter tasks by category' })
+    async getTasksForProject(
+        @Param('projectId') projectId: string,
+        @Query('page') page = 1,
+        @Query('limit') limit = 10,
+        @Query('status') status?: string,
+        @Query('categoryId') categoryId?: string,
+    ) {
+        return this.tasksService.findByProjectId(projectId, Number(page), Number(limit), status, categoryId);
+    }
+
+    // -------------------------------
+    // POST /projects/:projectId/tasks
+    // -------------------------------
+    @Post(':projectId/tasks')
+    @ProjectRoles(ProjectRole.CONTRIBUTOR, ProjectRole.MANAGER)
+    @ApiOperation({ summary: 'Create a task in a project' })
+    @ApiResponse({ status: 201, description: 'Task created', type: TaskResponseDto })
+    @ApiBody({ type: CreateTaskDto })
+    async createTaskInProject(
+        @Param('projectId') projectId: string,
+        @Request() req,
+        @Body() dto: CreateTaskDto,
+    ) {
+        dto.projectId = projectId;
+        return this.tasksService.create(dto, req.user.id);
     }
 }

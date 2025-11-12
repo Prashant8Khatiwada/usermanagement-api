@@ -1,7 +1,7 @@
 import { Category } from "src/categories/categories.entity";
 import { Tag } from "src/tags/tags.entity";
 import { User } from "../users/user.entity";
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "src/projects/projects.entity";
 
 @Entity('tasks')
@@ -32,7 +32,11 @@ export class Task {
     @JoinTable()
     tags: Tag[];
 
-    @ManyToOne(() => Project, project => project.tasks, { nullable: true })
+    @Column({ type: 'uuid', nullable: true })
+    projectId: string;
+
+    @ManyToOne(() => Project, project => project.tasks, { nullable: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'projectId' })
     project: Project;
 
     @CreateDateColumn()

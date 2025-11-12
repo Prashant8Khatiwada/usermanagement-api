@@ -77,10 +77,11 @@ export class Project {
     // ------------------------------------------------------------------
     @OneToMany(() => Task, (task) => task.project, {
         cascade: true,
+        onDelete: 'CASCADE',
     })
     tasks: Task[];
 
-    @OneToMany(() => ProjectMember, (member) => member.project, { cascade: true, eager: true })
+    @OneToMany(() => ProjectMember, (member) => member.project, { cascade: true, onDelete: 'CASCADE', eager: true })
     members: ProjectMember[];
 
     @ManyToOne(() => User, { nullable: false })

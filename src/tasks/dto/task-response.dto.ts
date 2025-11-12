@@ -17,6 +17,11 @@ export class TaskResponseDto {
         name: string;
         description?: string;
     };
+    project?: {
+        id: string;
+        name: string;
+        description?: string;
+    };
     tags: TagResponseDto[];
     user: {
         id: string;
