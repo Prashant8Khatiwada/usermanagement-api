@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './teams.entity';
@@ -6,9 +6,12 @@ import { TeamMember, TeamRole } from './team-member.entity';
 import { User } from 'src/users/user.entity';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
+import { paginate } from 'src/common/utils/paginate';
 
 @Injectable()
 export class TeamsService {
+    private readonly logger = new Logger(TeamsService.name);
+
     constructor(
         @InjectRepository(Team)
         private readonly teamRepo: Repository<Team>,
@@ -49,6 +52,31 @@ export class TeamsService {
             where: { user: { id: userId } },
             relations: ['team'],
         }).then(memberships => memberships.map(m => m.team));
+    }
+
+    // -------------------------------
+    // Get all teams a user belongs to with pagination
+    // -------------------------------
+    async findAll(userId: string, page = 1, limit = 10) {
+        this.logger.log(`findAll called with userId: ${userId}, page: ${page}, limit: ${limit}`);
+
+        const query = this.memberRepo.createQueryBuilder('member')
+            .leftJoin('member.team', 'team')
+            .leftJoin('member.user', 'user')
+            .where('user.id = :userId', { userId })
+            .select([
+                'team.id',
+                'team.name',
+            ]);
+
+        this.logger.log(`Executing query: ${query.getQuery()}`);
+        const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
+        this.logger.log(`Query returned ${data.length} teams out of ${total} total`);
+
+        // Since data is memberships, map to teams
+        const teams = data.map(m => m.team);
+
+        return paginate(teams, total, page, limit);
     }
 
     // -------------------------------

@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from '../users/user.entity';
 import { DeleteResult } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { paginate } from '../common/utils/paginate';
 
 
 export interface IUser {
@@ -20,14 +21,26 @@ export interface IUser {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) { }
 
-  // Return a promise that resolves to an array of users
-  findAll(): Promise<User[]> {
-    return this.userRepo.find();
+  // Return a promise that resolves to paginated users with optional role filter
+  async findAll(userId: string, page: number = 1, limit: number = 10, role?: string) {
+    this.logger.log(`UsersService.findAll called with userId: ${userId}, page: ${page}, limit: ${limit}, role: ${role}`);
+
+    const query = this.userRepo.createQueryBuilder('user');
+
+    if (role) {
+      query.where('user.role = :role', { role });
+    }
+
+    const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
+
+    return paginate(data, total, page, limit);
   }
 
   // Return a promise that resolves to a single user or null

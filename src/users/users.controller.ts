@@ -1,30 +1,37 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, BadRequestException, UseGuards, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, BadRequestException, UseGuards, Request, Query, Logger } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UserDto } from './dto/user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles.decorator';
-import { UserRole } from '../users/user.entity';
+import { UserRole, User } from '../users/user.entity';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { GetUserId } from '../common/decorators/get-user.decorator';
+import { UserSchema } from './users.schema';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
+    private readonly logger = new Logger(UsersController.name);
+
     constructor(private readonly usersService: UsersService) { }
 
     @Get()
-    @ApiOperation({ summary: 'Get all users' })
-    @ApiResponse({ status: 200, description: 'List of all users', type: [UserDto] })
-    async getAllUsers(): Promise<UserDto[]> {
-        const users = await this.usersService.findAll();
-        if (!users || users.length === 0) {
-            throw new NotFoundException('No users available');
-        }
-        const usersWithoutPassword = users.map(({ password, ...rest }) => rest);
-
-        return usersWithoutPassword;
+    @ApiOperation({ summary: 'Get all users with optional pagination and filtering' })
+    @ApiResponse({ status: 200, description: 'List of users', type: [User] })
+    @ApiQuery({ name: 'page', required: false, type: Number, example: 1, description: 'Page number, default 1' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 10, description: 'Items per page, default 10' })
+    @ApiQuery({ name: 'role', required: false, type: String, example: 'user', description: 'Filter by role' })
+    findAll(
+        @GetUserId('id') userId: string,
+        @Query('page') page: number,
+        @Query('limit') limit: number,
+        @Query('role') role: string,
+    ) {
+        this.logger.log(`UsersController.findAll called with userId: ${userId}, page: ${page}, limit: ${limit}, role: ${role}`);
+        return this.usersService.findAll(userId, +page || 1, +limit || 10, role);
     }
 
     @Get('me')
@@ -59,7 +66,7 @@ export class UsersController {
 
     @Post()
     @ApiOperation({ summary: 'Create a new user' })
-    @ApiBody({ type: CreateUserDto })
+    @ApiBody({ type: CreateUserDto, schema: UserSchema })
     @ApiResponse({ status: 201, description: 'User created', type: UserDto })
     @Roles(UserRole.ADMIN) // only admins can create
     @UseGuards(JwtAuthGuard, RolesGuard)
@@ -70,7 +77,7 @@ export class UsersController {
     @Patch(":id")
     @ApiOperation({ summary: 'Update user by ID' })
     @ApiParam({ name: 'id', type: String, description: 'User ID' })
-    @ApiBody({ type: UpdateUserDto })
+    @ApiBody({ type: UpdateUserDto, schema: UserSchema })
     @ApiResponse({ status: 200, description: 'User updated', type: UserDto })
     @ApiResponse({ status: 404, description: 'User not found' })
     async updateUser(
