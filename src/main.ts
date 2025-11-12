@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = new DocumentBuilder()
-    .setTitle('User Management API')
+    .setTitle('Swagger Docs')
     .setDescription('API for managing users')
     .setVersion('1.0')
     .addBearerAuth()
@@ -19,13 +19,18 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
   app.use(
     '/scalar',
     apiReference({
-      url: '/api-json',
+      url: '/docs-json',
       theme: 'default',
+      title: 'API Reference',
       authentication: {
         preferredSecurityScheme: 'bearerAuth',
       },
