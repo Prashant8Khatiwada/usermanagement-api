@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/user.entity';
+import { User, UserRole } from '../users/user.entity';
 import { DeleteResult } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
@@ -10,7 +10,7 @@ export interface IUser {
   id: string;
   username: string;
   password: string;
-  role: 'admin' | 'user'
+  role: UserRole;
   firstName?: string;
   lastName?: string;
   email?: string;

@@ -9,6 +9,9 @@ import { TasksModule } from './tasks/tasks.module';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tags/tags.module';
+import { TeamsModule } from './teams/teams.module';
+import { ProjectsModule } from './projects/projects.module';
+import { ProjectsService } from './nest/projects/projects.service';
 
 @Module({
   imports: [
@@ -31,8 +34,10 @@ import { TagsModule } from './tags/tags.module';
     TasksModule,
     CategoriesModule,
     TagsModule,
+    TeamsModule,
+    ProjectsModule,
   ], controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, ProjectsService],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

@@ -1,7 +1,9 @@
 import { Task } from 'src/tasks/task.entity';
 import { Category } from 'src/categories/categories.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Tag } from 'src/tags/tags.entity';
+import { TeamMember } from 'src/teams/team-member.entity';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Project } from 'src/projects/projects.entity';
 
 export enum UserRole {
     USER = 'user',
@@ -17,10 +19,10 @@ export class User {
     username: string;
 
     @Column({ nullable: true })
-    password: string; // will be stored hashed password
+    password: string;
 
     @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
-    role: "admin" | "user";
+    role: UserRole;
 
     @Column({ name: 'first_name', nullable: true })
     firstName: string;
@@ -37,13 +39,27 @@ export class User {
     @Column({ name: 'date_of_birth', nullable: true })
     dateOfBirth: string;
 
+    // -----------------------------
+    // Existing relations
+    // -----------------------------
     @OneToMany(() => Task, (task) => task.user)
     tasks: Task[];
 
     @OneToMany(() => Category, (category) => category.user)
     categories: Category[];
 
-    @OneToMany(() => Tag, tag => tag.user)
+    @OneToMany(() => Tag, (tag) => tag.user)
     tags: Tag[];
 
+    // -----------------------------
+    // Team memberships
+    // -----------------------------
+    @OneToMany(() => TeamMember, (membership) => membership.user)
+    teamMemberships: TeamMember[];
+
+    // -----------------------------
+    // Projects owned by the user
+    // -----------------------------
+    @OneToMany(() => Project, (project) => project.owner)
+    ownedProjects: Project[];
 }

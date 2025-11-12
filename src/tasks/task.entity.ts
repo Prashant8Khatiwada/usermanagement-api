@@ -2,6 +2,7 @@ import { Category } from "src/categories/categories.entity";
 import { Tag } from "src/tags/tags.entity";
 import { User } from "../users/user.entity";
 import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Project } from "src/projects/projects.entity";
 
 @Entity('tasks')
 export class Task {
@@ -30,6 +31,9 @@ export class Task {
     @ManyToMany(() => Tag, tag => tag.tasks, { cascade: true })
     @JoinTable()
     tags: Tag[];
+
+    @ManyToOne(() => Project, project => project.tasks, { nullable: true })
+    project: Project;
 
     @CreateDateColumn()
     createdAt: Date;
