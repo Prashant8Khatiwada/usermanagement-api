@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, IsArray } from 'class-validator';
 
 export class CreateTaskDto {
     @IsString()
@@ -12,4 +12,9 @@ export class CreateTaskDto {
     @IsOptional()
     @IsUUID()
     categoryId?: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsUUID('all', { each: true })
+    tagIds?: string[];
 }

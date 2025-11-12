@@ -7,12 +7,12 @@ export class Tag {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
+    @Column()
     name: string;
 
     @ManyToMany(() => Task, task => task.tags)
     tasks: Task[];
 
-    @ManyToOne(() => User, user => user.tags, { onDelete: 'SET NULL' })
-    createdBy: User;
+    @ManyToOne(() => User, user => user.tags, { onDelete: 'CASCADE' })
+    user: User;
 }

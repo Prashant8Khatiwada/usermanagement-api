@@ -9,27 +9,25 @@ import { TagSchema } from './tag.schema';
 
 @ApiTags('tags')
 @Controller('tags')
+@UseGuards(JwtAuthGuard)
 export class TagsController {
     constructor(private readonly tagsService: TagsService) { }
 
-    @UseGuards(JwtAuthGuard)
     @Post()
-    @ApiOperation({ summary: 'Create a new tag' })
+    @ApiOperation({ summary: 'Create a new tag for the authenticated user' })
     @ApiBody({ schema: TagSchema })
     @ApiResponse({ status: 201, description: 'Tag created successfully', schema: TagSchema })
     create(@Body() dto: CreateTagDto, @GetUserId('id') userId: string) {
-        console.log(userId, "user id id ")
         return this.tagsService.create(dto, userId);
     }
 
     @Get()
-    @ApiOperation({ summary: 'Get all tags' })
-    @ApiResponse({ status: 200, description: 'List of tags', schema: { type: 'array', items: TagSchema } })
-    findAll() {
-        return this.tagsService.findAll();
+    @ApiOperation({ summary: 'Get all tags for the authenticated user' })
+    @ApiResponse({ status: 200, description: 'List of tags for the user', schema: { type: 'array', items: TagSchema } })
+    findAll(@GetUserId('id') userId: string) {
+        return this.tagsService.findAll(userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Patch(':id')
     @ApiOperation({ summary: 'Update a tag by ID' })
     @ApiBody({ schema: TagSchema }) // use same body schema for update
@@ -38,7 +36,6 @@ export class TagsController {
         return this.tagsService.update(id, dto, userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Delete(':id')
     @ApiOperation({ summary: 'Delete a tag by ID' })
     @ApiResponse({ status: 200, description: 'Tag deleted successfully' })

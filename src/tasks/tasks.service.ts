@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from './task.entity';
 import { Repository, In } from 'typeorm';
@@ -6,25 +6,62 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { paginate } from 'src/common/utils/paginate';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskResponseDto, PaginatedTasksResponseDto, JustMessageDto } from './dto/task-response.dto';
+import { Tag } from '../tags/tags.entity';
 
 @Injectable()
 export class TasksService {
     private readonly logger = new Logger(TasksService.name);
 
-    constructor(@InjectRepository(Task) private repo: Repository<Task>) { }
+    constructor(
+        @InjectRepository(Task) private repo: Repository<Task>,
+        @InjectRepository(Tag) private readonly tagRepo: Repository<Tag>,
+    ) { }
+
+    private async validateTagOwnership(tagIds: string[], userId: string): Promise<Tag[]> {
+        if (!tagIds || tagIds.length === 0) return [];
+
+        const tags = await this.tagRepo.find({
+            where: { id: In(tagIds) },
+            relations: ['user'],
+        });
+
+        // Check if all requested tags exist
+        if (tags.length !== tagIds.length) {
+            throw new NotFoundException('Some tags were not found');
+        }
+
+        // Validate ownership
+        const unauthorizedTags = tags.filter(tag => tag.user.id !== userId);
+        if (unauthorizedTags.length > 0) {
+            throw new ForbiddenException('You can only attach your own tags to tasks');
+        }
+
+        return tags;
+    }
 
     async create(dto: CreateTaskDto, userId: string): Promise<TaskResponseDto> {
+        // Validate and prepare tags if provided
+        let tags: Tag[] = [];
+        if (dto.tagIds) {
+            tags = await this.validateTagOwnership(dto.tagIds, userId);
+        }
+
         const task = this.repo.create({
-            ...dto,
+            title: dto.title,
+            description: dto.description,
             user: { id: userId },
-            category: dto.categoryId ? { id: dto.categoryId } : undefined
+            category: dto.categoryId ? { id: dto.categoryId } : undefined,
+            tags: tags
         });
+
         const savedTask = await this.repo.save(task);
         const populatedTask = await this.repo.findOne({
             where: { id: savedTask.id },
-            relations: ['user', 'category']
+            relations: ['user', 'category', 'tags', 'tags.user']
         });
+
         if (!populatedTask) throw new NotFoundException('Task not found after creation');
+
         return {
             id: populatedTask.id,
             title: populatedTask.title,
@@ -37,6 +74,10 @@ export class TasksService {
                 name: populatedTask.category.name,
                 description: populatedTask.category.description,
             } : undefined,
+            tags: populatedTask.tags ? populatedTask.tags.map(tag => ({
+                id: tag.id,
+                name: tag.name,
+            })) : [],
             user: {
                 id: populatedTask.user.id,
                 username: populatedTask.user.username,
@@ -50,6 +91,8 @@ export class TasksService {
         const query = this.repo.createQueryBuilder('task')
             .leftJoin('task.user', 'user')
             .leftJoin('task.category', 'category')
+            .leftJoin('task.tags', 'tag')
+            .leftJoin('tag.user', 'tagUser')
             .where('user.id = :userId', { userId })
             .select([
                 'task.id',
@@ -62,7 +105,10 @@ export class TasksService {
                 'user.username',
                 'category.id',
                 'category.name',
-                'category.description'
+                'category.description',
+                'tag.id',
+                'tag.name',
+                'tagUser.id'
             ]);
 
         if (status) query.andWhere('task.status = :status', { status });
@@ -72,29 +118,53 @@ export class TasksService {
         const [data, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount();
         this.logger.log(`Query returned ${data.length} tasks out of ${total} total`);
 
-        return paginate(data.map(task => ({
-            id: task.id,
-            title: task.title,
-            description: task.description,
-            status: task.status,
-            createdAt: task.createdAt,
-            updatedAt: task.updatedAt,
-            category: task.category ? {
-                id: task.category.id,
-                name: task.category.name,
-                description: task.category.description,
-            } : undefined,
-            user: {
-                id: task.user.id,
-                username: task.user.username,
-            },
-        })), total, page, limit);
+        // Group tags by task
+        const taskMap = new Map();
+        data.forEach(task => {
+            if (!taskMap.has(task.id)) {
+                taskMap.set(task.id, {
+                    id: task.id,
+                    title: task.title,
+                    description: task.description,
+                    status: task.status,
+                    createdAt: task.createdAt,
+                    updatedAt: task.updatedAt,
+                    category: task.category ? {
+                        id: task.category.id,
+                        name: task.category.name,
+                        description: task.category.description,
+                    } : undefined,
+                    tags: [],
+                    user: {
+                        id: task.user.id,
+                        username: task.user.username,
+                    },
+                });
+            }
+
+            // Add tag if exists
+            if (task['tag.id']) {
+                const existingTask = taskMap.get(task.id);
+                const tagExists = existingTask.tags.some(t => t.id === task['tag.id']);
+                if (!tagExists) {
+                    existingTask.tags.push({
+                        id: task['tag.id'],
+                        name: task['tag.name'],
+                        userId: task['tagUser.id']
+                    });
+                }
+            }
+        });
+
+        const resultData = Array.from(taskMap.values());
+
+        return paginate(resultData, total, page, limit);
     }
 
     async findOne(id: string, userId: string): Promise<TaskResponseDto> {
         const task = await this.repo.findOne({
             where: { id, user: { id: userId } },
-            relations: ['user', 'category']
+            relations: ['user', 'category', 'tags', 'tags.user']
         });
         if (!task) throw new NotFoundException('Task Not Found');
         return {
@@ -109,6 +179,11 @@ export class TasksService {
                 name: task.category.name,
                 description: task.category.description,
             } : undefined,
+            tags: task.tags ? task.tags.map(tag => ({
+                id: tag.id,
+                name: tag.name,
+                userId: tag.user.id
+            })) : [],
             user: {
                 id: task.user.id,
                 username: task.user.username,
@@ -117,11 +192,58 @@ export class TasksService {
     }
 
     async update(id: string, userId: string, dto: UpdateTaskDto): Promise<TaskResponseDto> {
-        const taskEntity = await this.repo.findOne({ where: { id, user: { id: userId } } })
-        if (!taskEntity) throw new NotFoundException('Task Not Found')
-        Object.assign(taskEntity, dto)
-        const updatedTask = await this.repo.save(taskEntity)
-        return updatedTask;
+        const taskEntity = await this.repo.findOne({
+            where: { id, user: { id: userId } },
+            relations: ['user', 'category', 'tags']
+        });
+
+        if (!taskEntity) throw new NotFoundException('Task Not Found');
+
+        // Handle tag updates if provided
+        if (dto.tagIds) {
+            const newTags = await this.validateTagOwnership(dto.tagIds, userId);
+            taskEntity.tags = newTags;
+        }
+
+        // Update other fields
+        if (dto.title) taskEntity.title = dto.title;
+        if (dto.description !== undefined) taskEntity.description = dto.description;
+        if (dto.categoryId !== undefined) {
+            taskEntity.category = dto.categoryId ? { id: dto.categoryId, name: '', description: '' } as any : null;
+        }
+
+        const updatedTask = await this.repo.save(taskEntity);
+
+        // Return the updated task with all relations
+        const finalTask = await this.repo.findOne({
+            where: { id: updatedTask.id },
+            relations: ['user', 'category', 'tags', 'tags.user']
+        });
+
+        if (!finalTask) throw new NotFoundException('Task not found after update');
+
+        return {
+            id: finalTask.id,
+            title: finalTask.title,
+            description: finalTask.description,
+            status: finalTask.status,
+            createdAt: finalTask.createdAt,
+            updatedAt: finalTask.updatedAt,
+            category: finalTask.category ? {
+                id: finalTask.category.id,
+                name: finalTask.category.name,
+                description: finalTask.category.description,
+            } : undefined,
+            tags: finalTask.tags ? finalTask.tags.map(tag => ({
+                id: tag.id,
+                name: tag.name,
+                userId: tag.user.id
+            })) : [],
+            user: {
+                id: finalTask.user.id,
+                username: finalTask.user.username,
+            },
+        };
     }
 
     async remove(id: string, userId: string): Promise<JustMessageDto> {

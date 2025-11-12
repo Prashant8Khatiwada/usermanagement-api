@@ -1,5 +1,10 @@
 import { Task } from '../task.entity';
 
+export class TagResponseDto {
+    id: string;
+    name: string;
+}
+
 export class TaskResponseDto {
     id: string;
     title: string;
@@ -12,6 +17,7 @@ export class TaskResponseDto {
         name: string;
         description?: string;
     };
+    tags: TagResponseDto[];
     user: {
         id: string;
         username: string;

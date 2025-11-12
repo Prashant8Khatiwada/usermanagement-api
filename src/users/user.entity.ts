@@ -43,7 +43,7 @@ export class User {
     @OneToMany(() => Category, (category) => category.user)
     categories: Category[];
 
-    @OneToMany(() => Tag, tag => tag.createdBy)
+    @OneToMany(() => Tag, tag => tag.user)
     tags: Tag[];
 
 }
