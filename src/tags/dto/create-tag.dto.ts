@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateTagDto {
-    @ApiProperty()
+    @ApiProperty({ example: 'urgent' })
     name: string;
 }
